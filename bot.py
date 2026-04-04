@@ -19,7 +19,8 @@ from aiogram.filters import CommandStart
 
 # ================= CONFIG =================
 
-BOT_TOKEN = "8389107035:AAGC6OG1Nvp-HhpfRBhluwPmNNHgzFs5dwM"
+import os
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8389107035:AAGC6OG1Nvp-HhpfRBhluwPmNNHgzFs5dwM")
 DATA_FILE = Path("tokens.json")
 
 KEYBOARD = ReplyKeyboardMarkup(
@@ -210,7 +211,6 @@ async def check_marking(token, km):
         async with session.post(url, headers=headers, json=payload) as resp:
 
             data = await resp.json()
-            print(f"[API] km={km!r}  response={data}")
 
             return parse_xtrace_response(data)
 
