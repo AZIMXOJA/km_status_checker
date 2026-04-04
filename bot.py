@@ -491,16 +491,28 @@ async def handle_photo(message: Message, bot: Bot):
 
 # ================= MAIN =================
 
-async def main():
+from aiohttp import web
 
+async def health(request):
+    return web.Response(text="OK")
+
+async def main():
     bot = Bot(BOT_TOKEN)
     dp = Dispatcher()
-
     dp.include_router(router)
 
-    print("Bot started")
+    # Запускаем простой веб-сервер для Render
+    app = web.Application()
+    app.router.add_get("/", health)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
 
+    print(f"Bot started, health server on port {port}")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
+# этот файл уже завершён выше
