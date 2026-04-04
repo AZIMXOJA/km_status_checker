@@ -1,0 +1,6 @@
+aiogram
+aiohttp
+opencv-python-headless
+numpy
+pylibdmtx
+pyzbar
