@@ -38,11 +38,11 @@ EXECUTOR = ThreadPoolExecutor(max_workers=4)
 # ================= СПРАВОЧНИКИ =================
 
 STATUS_RU = {
-    "RECEIVED":    "Получен",
-    "APPLIED":     "Нанесён",
-    "INTRODUCED":  "В обороте",
-    "WITHDRAWN":   "Выведен из оборота",
-    "WRITTEN_OFF": "Списан",
+    "RECEIVED":    "Получен 📩",
+    "APPLIED":     "Нанесён 🏷",
+    "INTRODUCED":  "В обороте 🟢",
+    "WITHDRAWN":   "Выведен из оборота ⭕️",
+    "WRITTEN_OFF": "Списан 🪓",
 }
 
 EXT_STATUS_RU = {
@@ -480,7 +480,7 @@ async def send_result(message: Message, result: dict):
         customs = r.get("customs")
 
         lines = [
-            "📦 <b>Штучная маркировка</b>  <i>(ваш товар)</i>\n",
+            "📦 <b>Штучная маркировка</b>  <i>(ваш товар ✅)</i>\n",
             f"<b>Код:</b>\n<code>{e(r['code'])}</code>\n",
             row("Статус",          r.get("status"),         tr_status),
             row("Расш. статус",    ext) if ext else None,
@@ -559,7 +559,7 @@ async def send_result(message: Message, result: dict):
         ext = tr_ext(r.get("extendedStatus"))
 
         lines = [
-            "📦 <b>Групповая упаковка</b>  <i>(ваш товар)</i>\n",
+            "📦 <b>Групповая упаковка</b>  <i>(ваш товар ✅)</i>\n",
             f"<b>Код:</b>\n<code>{e(r['code'])}</code>\n",
             row("Статус",           r.get("status"),         tr_status),
             row("Расш. статус",     ext) if ext else None,
@@ -598,7 +598,7 @@ async def send_result(message: Message, result: dict):
         customs = r.get("customs")
 
         lines = [
-            "🗃 <b>Транспортная упаковка</b>  <i>(ваш товар)</i>\n",
+            "🗃 <b>Транспортная упаковка</b>  <i>(ваш товар ✅)</i>\n",
             f"<b>Код:</b>\n<code>{e(r['code'])}</code>\n",
             row("Статус",          r.get("status"),         tr_status),
             row("Расш. статус",    ext) if ext else None,
@@ -651,7 +651,7 @@ async def send_result(message: Message, result: dict):
         ext = tr_ext(r.get("extendedStatus"))
 
         lines = [
-            "⚠️ <b>Штучная маркировка</b>  <i>(не ваш товар)</i>\n",
+            "⚠️ <b>Штучная маркировка</b>  <i>(не ваш товар ❌)</i>\n",
             f"<b>Код:</b>\n<code>{e(r['code'])}</code>\n",
             row("Статус",         r.get("status"),         tr_status),
             row("Расш. статус",   ext) if ext else None,
@@ -680,7 +680,7 @@ async def send_result(message: Message, result: dict):
         label = "Транспортная упаковка" if t == "foreign_box" else "Групповая упаковка"
 
         lines = [
-            f"⚠️ <b>{icon} {label}</b>  <i>(не ваш товар)</i>\n",
+            f"⚠️ <b>{icon} {label}</b>  <i>(не ваш товар ❌)</i>\n",
             f"<b>Код:</b>\n<code>{e(r['code'])}</code>\n",
             row("Статус",          r.get("status"),      tr_status),
             row("Расш. статус",    ext) if ext else None,
