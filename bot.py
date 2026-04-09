@@ -490,8 +490,8 @@ async def send_result(message: Message, result: dict):
             row("Серия/партия",    r.get("productSeries")),
             row("Страна произв.",  r.get("manufacturerCountry")),
             "",
-            row("Родит. упаковка", r.get("parentCode")) and
-                f"<b>Родит. упаковка:</b>\n<code>{e(r.get('parentCode'))}</code>",
+            row("Родительская упаковка", r.get("parentCode")) and
+                f"<b>Родительская упаковка:</b>\n<code>{e(r.get('parentCode'))}</code>",
             "",
             "<b>📅 Даты</b>",
             row("Дата произв.",    r.get("productionDate")),
@@ -570,8 +570,8 @@ async def send_result(message: Message, result: dict):
             row("Всего единиц",     r.get("unitsTotal")),
             "⚠️ <b>Разнородный состав</b>" if r.get("mixed") else None,
             "",
-            row("Родит. упаковка", r.get("parentCode")) and
-                f"<b>Родит. упаковка:</b>\n<code>{e(r.get('parentCode'))}</code>",
+            row("Родительская упаковка", r.get("parentCode")) and
+                f"<b>Родительская упаковка:</b>\n<code>{e(r.get('parentCode'))}</code>",
             "",
             "<b>📅 Даты</b>",
             row("Дата произв.",  r.get("productionDate")),
@@ -609,8 +609,8 @@ async def send_result(message: Message, result: dict):
             row("Всего единиц",    r.get("unitsTotal")),
             "⚠️ <b>Разнородный состав</b>" if r.get("mixed") else None,
             "",
-            row("Родит. упаковка", r.get("parentCode")) and
-                f"<b>Родит. упаковка:</b>\n<code>{e(r.get('parentCode'))}</code>",
+            row("Родительская упаковка", r.get("parentCode")) and
+                f"<b>Родительская упаковка:</b>\n<code>{e(r.get('parentCode'))}</code>",
             "",
             "<b>📅 Даты</b>",
             row("Дата эмиссии",  r.get("emissionDate")),
