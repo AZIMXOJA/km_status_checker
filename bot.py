@@ -20,8 +20,17 @@ from aiogram.filters import CommandStart
 # ================= CONFIG =================
 
 import os
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8389107035:AAGC6OG1Nvp-HhpfRBhluwPmNNHgzFs5dwM")
-DATA_FILE = Path("tokens.json")
+BOT_TOKEN  = os.environ.get("BOT_TOKEN", "8389107035:AAGC6OG1Nvp-HhpfRBhluwPmNNHgzFs5dwM")
+DATA_FILE  = Path("tokens.json")
+USAGE_FILE = Path("usage.json")
+
+# ---- Whitelist по username (без @, регистр не важен) ----
+WHITELIST_USERNAMES: set[str] = {
+    "azim_gws", "Smartup_Asadullo"
+    # добавь сюда других: "username2", "username3"
+}
+
+DAILY_LIMIT = 5  # запросов в сутки для не-whitelist юзеров
 
 KEYBOARD = ReplyKeyboardMarkup(
     keyboard=[
@@ -151,6 +160,69 @@ def set_user_token(user_id, token):
     data = load_tokens()
     data[str(user_id)] = token.strip()
     save_tokens(data)
+
+# ================= ACCESS CONTROL =================
+
+def is_whitelisted(username: str | None) -> bool:
+    if not username:
+        return False
+    return username.lower() in WHITELIST_USERNAMES
+
+def load_usage() -> dict:
+    if USAGE_FILE.exists():
+        return json.loads(USAGE_FILE.read_text(encoding="utf-8"))
+    return {}
+
+def save_usage(data: dict):
+    USAGE_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+def check_and_increment(user_id: int, username: str | None) -> bool:
+    """
+    True  → запрос разрешён
+    False → лимит исчерпан или нет доступа
+    Whitelist юзеры всегда True.
+    """
+    if is_whitelisted(username):
+        return True
+
+    from datetime import date
+    today = str(date.today())
+    data  = load_usage()
+    key   = str(user_id)
+    entry = data.get(key, {"date": today, "count": 0})
+
+    if entry["date"] != today:
+        entry = {"date": today, "count": 0}
+
+    if entry["count"] >= DAILY_LIMIT:
+        return False
+
+    entry["count"] += 1
+    data[key] = entry
+    save_usage(data)
+    return True
+
+def remaining_today(user_id: int) -> int:
+    from datetime import date
+    today = str(date.today())
+    data  = load_usage()
+    entry = data.get(str(user_id), {"date": today, "count": 0})
+    if entry["date"] != today:
+        return DAILY_LIMIT
+    return max(0, DAILY_LIMIT - entry["count"])
+
+LIMIT_MSG = (
+    "⛔ <b>Лимит запросов исчерпан</b>\n\n"
+    f"Бесплатный план позволяет <b>{DAILY_LIMIT} проверок в сутки</b>.\n"
+    "Для неограниченного доступа оформите подписку. 💳\n\n"
+    "Лимит обновится в <b>00:00</b> по Ташкентскому времени."
+)
+
+NO_ACCESS_MSG = (
+    "🔒 <b>Доступ закрыт</b>\n\n"
+    "У вашего аккаунта нет доступа к боту.\n"
+    "Для подключения оформите подписку. 💳"
+)
 
 # ================= UTILS =================
 
@@ -386,10 +458,12 @@ async def start(message: Message):
 @router.message(F.text)
 async def handle_text(message: Message):
 
-    user_id = message.from_user.id
-    text    = message.text.strip()
-    state   = USER_STATE.get(user_id)
+    user_id  = message.from_user.id
+    username = message.from_user.username  # может быть None
+    text     = message.text.strip()
+    state    = USER_STATE.get(user_id)
 
+    # --- /start и служебные кнопки — без ограничений ---
     if state == "awaiting_token":
         set_user_token(user_id, text)
         USER_STATE.pop(user_id, None)
@@ -409,8 +483,21 @@ async def handle_text(message: Message):
         await message.answer("Введите KM:")
         return
 
+    # --- Проверка KM — здесь применяем access control ---
     if state == "awaiting_km":
         USER_STATE.pop(user_id, None)
+
+        # Нет username → нет доступа
+        if not username:
+            await message.answer(NO_ACCESS_MSG, parse_mode="HTML")
+            return
+
+        # Не в whitelist и нет подписки
+        if not is_whitelisted(username) and remaining_today(user_id) == 0:
+            await message.answer(LIMIT_MSG, parse_mode="HTML")
+            return
+
+        check_and_increment(user_id, username)
         token    = get_user_token(user_id)
         km_clean = clean_km(text)
         result   = await check_marking(token, km_clean)
@@ -422,6 +509,16 @@ async def handle_text(message: Message):
         if not token:
             await message.answer("Сначала введите токен через /start")
             return
+
+        if not username:
+            await message.answer(NO_ACCESS_MSG, parse_mode="HTML")
+            return
+
+        if not is_whitelisted(username) and remaining_today(user_id) == 0:
+            await message.answer(LIMIT_MSG, parse_mode="HTML")
+            return
+
+        check_and_increment(user_id, username)
         km_clean = clean_km(text)
         result   = await check_marking(token, km_clean)
         await send_result(message, result)
@@ -784,10 +881,19 @@ async def detect_km_from_image(path: str) -> str | None:
 @router.message(F.photo)
 async def handle_photo(message: Message, bot: Bot):
 
-    user_id = message.from_user.id
+    user_id  = message.from_user.id
+    username = message.from_user.username
 
     if not get_user_token(user_id):
         await message.answer("Сначала введите токен через /start")
+        return
+
+    if not username:
+        await message.answer(NO_ACCESS_MSG, parse_mode="HTML")
+        return
+
+    if not is_whitelisted(username) and remaining_today(user_id) == 0:
+        await message.answer(LIMIT_MSG, parse_mode="HTML")
         return
 
     await message.answer("🔍 Распознаю код...")
@@ -818,6 +924,7 @@ async def handle_photo(message: Message, bot: Bot):
     )
 
     token  = get_user_token(user_id)
+    check_and_increment(user_id, username)
     result = await check_marking(token, km)
     await send_result(message, result)
 
