@@ -26,7 +26,7 @@ USAGE_FILE = Path("usage.json")
 
 # ---- Whitelist по username (без @, регистр не важен) ----
 WHITELIST_USERNAMES: set[str] = {
-    "azim_gws", "Smartup_Asadullo"
+    "azim_gws", "Smartup_Asadullo", "abduvositov_8700_98", "abduvositov_8700_77", "abduvositov_8700_33"
     # добавь сюда других: "username2", "username3"
 }
 
